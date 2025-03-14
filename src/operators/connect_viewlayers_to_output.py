@@ -12,10 +12,14 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         if not context.scene.use_nodes:
             context.scene.use_nodes = True
         
+        settings = context.scene.viewlayer_connector_settings
         tree = context.scene.node_tree
+        
+        if not bpy.data.is_saved:
+            self.report({'WARNING'}, "Please save the file first")
+            return {'CANCELLED'}
+            
         base_filename = os.path.splitext(bpy.path.basename(bpy.data.filepath))[0]
-        if not base_filename:
-            base_filename = "untitled"
         
         viewlayers = context.scene.view_layers
         if not viewlayers:
@@ -26,7 +30,13 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         start_y = 0
         spacing_y = -300
         
+        # Track progress for UI feedback
+        wm = context.window_manager
+        wm.progress_begin(0, len(viewlayers))
+        
         for idx, viewlayer in enumerate(viewlayers):
+            wm.progress_update(idx)
+            
             viewlayer_name = viewlayer.name
             rl_node = tree.nodes.new('CompositorNodeRLayers')
             rl_node.name = f"ViewLayer_{viewlayer_name}"
@@ -38,15 +48,23 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             output_node.name = f"Output_{viewlayer_name}"
             output_node.label = f"Output {viewlayer_name}"
             output_node.location = (rl_node.location.x + 400, rl_node.location.y)
-            output_node.base_path = f"//" + base_filename + "_" + viewlayer_name
-            output_node.format.file_format = 'OPEN_EXR_MULTILAYER'
             
+            # Use the custom output path from settings
+            output_path = settings.custom_output_path
+            if not output_path.endswith(os.sep):
+                output_path += os.sep
+            output_node.base_path = output_path + base_filename + "_" + viewlayer_name
+            
+            # Set file format from settings
+            output_node.format.file_format = settings.file_format
+            
+            # Clear existing inputs
             while len(output_node.inputs) > 1:
                 output_node.inputs.remove(output_node.inputs[-1])
             
             first_connection = True
             for output in rl_node.outputs:
-                if output.enabled:
+                if output.enabled and (settings.include_all_passes or output.name == 'Image'):
                     if first_connection:
                         output_node.file_slots[0].path = output.name
                         tree.links.new(output, output_node.inputs[0])
@@ -55,5 +73,6 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                         output_node.file_slots.new(output.name)
                         tree.links.new(output, output_node.inputs[-1])
         
+        wm.progress_end()
         self.report({'INFO'}, f"Connected {len(viewlayers)} ViewLayers to File Output nodes")
         return {'FINISHED'}
