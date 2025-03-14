@@ -3,6 +3,7 @@ from bpy.props import PointerProperty
 from .operators.connect_viewlayers_to_output import COMPOSITOR_OT_connect_viewlayers_to_output
 from .operators.additional_operators import COMPOSITOR_OT_setup_nodes, COMPOSITOR_OT_clear_viewlayer_outputs
 from .panels.viewlayer_connector_panel import COMPOSITOR_PT_viewlayer_connector, ViewLayerConnectorSettings
+from .operators.organizational_operators import COMPOSITOR_OT_organize_nodes, COMPOSITOR_OT_group_viewlayer_nodes, COMPOSITOR_OT_connect_sorted_viewlayers
 
 bl_info = {
     "name": "Auto Node Outputs",
@@ -19,6 +20,9 @@ classes = (
     COMPOSITOR_OT_connect_viewlayers_to_output,
     COMPOSITOR_OT_setup_nodes,
     COMPOSITOR_OT_clear_viewlayer_outputs,
+    COMPOSITOR_OT_organize_nodes,
+    COMPOSITOR_OT_group_viewlayer_nodes, 
+    COMPOSITOR_OT_connect_sorted_viewlayers,
     COMPOSITOR_PT_viewlayer_connector,
 )
 

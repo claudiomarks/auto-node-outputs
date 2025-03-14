@@ -75,4 +75,14 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         
         wm.progress_end()
         self.report({'INFO'}, f"Connected {len(viewlayers)} ViewLayers to File Output nodes")
+
+        # Group the nodes if that option is enabled
+        if settings.auto_group:
+            from ..utils.node_utils import group_viewlayer_nodes
+            group_viewlayer_nodes(tree)
+
+        # Organize the nodes if that option is enabled
+        if settings.auto_organize:
+            from ..utils.node_utils import arrange_nodes
+            arrange_nodes(tree, 'HIERARCHY')
         return {'FINISHED'}

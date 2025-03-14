@@ -1,9 +1,7 @@
 import bpy
-from bpy.types import Panel, PropertyGroup
-from bpy.props import BoolProperty, EnumProperty, StringProperty
-import os
+from bpy.types import PropertyGroup
+from bpy.props import BoolProperty, EnumProperty, StringProperty, FloatProperty
 
-# Settings class to store user preferences
 class ViewLayerConnectorSettings(PropertyGroup):
     include_all_passes: BoolProperty(
         name="Include All Passes",
@@ -28,6 +26,44 @@ class ViewLayerConnectorSettings(PropertyGroup):
         description="Directory to save output files",
         default="//renders/",
         subtype='DIR_PATH'
+    )
+    
+    # New organizational settings
+    clear_existing: BoolProperty(
+        name="Clear Existing Nodes",
+        description="Remove existing ViewLayer and Output nodes before creating new ones",
+        default=True
+    )
+    
+    auto_group: BoolProperty(
+        name="Auto-Group Nodes",
+        description="Automatically group ViewLayer nodes with their outputs",
+        default=False
+    )
+    
+    auto_organize: BoolProperty(
+        name="Auto-Organize Nodes",
+        description="Automatically arrange nodes in the compositor",
+        default=True
+    )
+    
+    node_spacing: FloatProperty(
+        name="Node Spacing",
+        description="Spacing between nodes",
+        default=300.0,
+        min=100.0,
+        max=1000.0
+    )
+    
+    sort_viewlayers: EnumProperty(
+        name="Sort ViewLayers",
+        description="Method to sort ViewLayers",
+        items=[
+            ('NONE', "No Sorting", "Use ViewLayers in their original order"),
+            ('ALPHABETICAL', "Alphabetical", "Sort ViewLayers alphabetically"),
+            ('CUSTOM', "Custom Order", "Sort ViewLayers by custom order")
+        ],
+        default='ALPHABETICAL'
     )
 
 class COMPOSITOR_PT_viewlayer_connector(Panel):
@@ -122,3 +158,30 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
         row = help_box.row()
         row.scale_y = 0.7
         row.label(text="ViewLayer and connect available passes.")
+
+        # Organizational options
+        box = layout.box()
+        box.label(text="Organization", icon='NODETREE')
+
+        row = box.row()
+        row.prop(settings, "clear_existing")
+
+        row = box.row()
+        row.prop(settings, "auto_group")
+
+        row = box.row()
+        row.prop(settings, "auto_organize")
+
+        row = box.row()
+        row.prop(settings, "node_spacing")
+
+        row = box.row()
+        row.prop(settings, "sort_viewlayers")
+
+        # Organization action buttons
+        row = layout.row(align=True)
+        row.operator("compositor.organize_nodes", text="Organize Nodes", icon='GRAPH')
+        row = layout.row(align=True)
+        row.operator("compositor.group_viewlayer_nodes", text="Group Nodes", icon='NODETREE')
+        row = layout.row(align=True)
+        row.operator("compositor.connect_sorted_viewlayers", text="Connect Sorted ViewLayers", icon='SORTSIZE')
