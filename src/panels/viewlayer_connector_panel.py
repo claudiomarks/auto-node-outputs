@@ -1,5 +1,6 @@
 import bpy
-from bpy.types import PropertyGroup
+import os  # Add this import
+from bpy.types import PropertyGroup, Panel  # Add Panel here
 from bpy.props import BoolProperty, EnumProperty, StringProperty, FloatProperty
 
 class ViewLayerConnectorSettings(PropertyGroup):
