@@ -1,6 +1,6 @@
 # Blender Add-on Manifest
 # See https://docs.blender.org/manual/en/latest/advanced/blender_directory_layout.html#manifest-toml
-# Created: 2025-03-26 19:04:30 UTC
+# Created: 2025-03-26 19:09:53 UTC
 # Author: claudiomarks
 
 [package]
@@ -9,6 +9,7 @@ name = "Auto Node Outputs"
 author = "claudiomarks"
 version = "1.2.0"
 blender_version_min = "4.3.0"
+id = "auto_node_outputs"
 
 # Optional fields
 blender_version_max = ""
@@ -42,4 +43,4 @@ exclude = [
 tags = ["compositor", "automation", "render", "output", "viewlayer"]
 maintainer = "claudiomarks"
 contributors = ["claudiomarks"]
-updated_at = "2025-03-26 19:04:30"
+updated_at = "2025-03-26 19:09:53"
