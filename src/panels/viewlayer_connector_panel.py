@@ -21,6 +21,71 @@ class ViewLayerConnectorSettings(PropertyGroup):
         ],
         default='OPEN_EXR_MULTILAYER'
     )
+
+    # New properties for selecting main and secondary output formats
+    main_output_format: EnumProperty(
+        name="Main Output Format",
+        description="File format for the main output node (contains all passes except Depth, Position, Normal, and Cryptomatte)",
+        items=[
+            ('OPEN_EXR_MULTILAYER', "OpenEXR MultiLayer", "Save as multilayer OpenEXR file"),
+            ('OPEN_EXR', "OpenEXR", "Save as OpenEXR file"),
+            ('PNG', "PNG", "Save as PNG file"),
+            ('JPEG', "JPEG", "Save as JPEG file")
+        ],
+        default='OPEN_EXR_MULTILAYER'
+    )
+    
+    # EXR compression options for main output
+    main_exr_codec: EnumProperty(
+        name="Main EXR Compression",
+        description="Compression codec for main output EXR files",
+        items=[
+            ('NONE', "None", "No compression"),
+            ('ZIPS', "ZIPS", "Lossless ZIP compression, one scanline at a time"),
+            ('ZIP', "ZIP", "Lossless ZIP compression, in blocks of 16 scanlines"),
+            ('PIZ', "PIZ", "Lossless wavelet compression"),
+            ('PXR24', "PXR24", "Lossy compression with 24-bit float precision"),
+            ('DWAA', "DWAA", "Lossy compression with adjustable quality, one scanline at a time"),
+            ('DWAB', "DWAB", "Lossy compression with adjustable quality, in blocks of 32 scanlines")
+        ],
+        default='ZIP'
+    )
+    
+    # Secondary output format
+    secondary_output_format: EnumProperty(
+        name="Secondary Output Format",
+        description="File format for the secondary output node (contains only Depth, Position, Normal, and Cryptomatte passes)",
+        items=[
+            ('OPEN_EXR', "OpenEXR", "Save as OpenEXR file"),
+            ('OPEN_EXR_MULTILAYER', "OpenEXR MultiLayer", "Save as multilayer OpenEXR file"),
+            ('PNG', "PNG", "Save as PNG file"),
+            ('JPEG', "JPEG", "Save as JPEG file")
+        ],
+        default='OPEN_EXR'
+    )
+    
+    # EXR compression options for secondary output
+    secondary_exr_codec: EnumProperty(
+        name="Secondary EXR Compression",
+        description="Compression codec for secondary output EXR files",
+        items=[
+            ('NONE', "None", "No compression"),
+            ('ZIPS', "ZIPS", "Lossless ZIP compression, one scanline at a time"),
+            ('ZIP', "ZIP", "Lossless ZIP compression, in blocks of 16 scanlines"),
+            ('PIZ', "PIZ", "Lossless wavelet compression"),
+            ('PXR24', "PXR24", "Lossy compression with 24-bit float precision"),
+            ('DWAA', "DWAA", "Lossy compression with adjustable quality, one scanline at a time"),
+            ('DWAB', "DWAB", "Lossy compression with adjustable quality, in blocks of 32 scanlines")
+        ],
+        default='ZIP'
+    )
+    
+    # Toggle for enabling secondary output node
+    use_secondary_output: BoolProperty(
+        name="Use Secondary Output",
+        description="Create a secondary output node for Depth, Position, Normal, and Cryptomatte passes",
+        default=True
+    )
     
     custom_output_path: StringProperty(
         name="Output Directory",
@@ -114,11 +179,41 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
         
         # Settings section
         box = layout.box()
-        box.label(text="Settings", icon='PREFERENCES')
+        box.label(text="Output Format Settings", icon='PREFERENCES')
+        
+        # Main output section
+        row = box.row()
+        row.label(text="Main Output Node:", icon='OUTPUT')
+        row = box.row()
+        row.prop(settings, "main_output_format")
+        
+        # Show compression options for EXR formats only
+        if settings.main_output_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
+            row = box.row()
+            row.prop(settings, "main_exr_codec")
         
         row = box.row()
-        row.prop(settings, "file_format")
+        row.label(text="Contains all passes except Depth, Position, Normal, and Cryptomatte")
         
+        # Secondary output section
+        box.separator()
+        row = box.row()
+        row.prop(settings, "use_secondary_output")
+        
+        # Only show secondary output format if enabled
+        if settings.use_secondary_output:
+            row = box.row()
+            row.prop(settings, "secondary_output_format")
+            
+            # Show compression options for EXR formats only
+            if settings.secondary_output_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
+                row = box.row()
+                row.prop(settings, "secondary_exr_codec")
+            
+            row = box.row()
+            row.label(text="Contains only Depth, Position, Normal, and Cryptomatte passes")
+        
+        box.separator()
         row = box.row()
         row.prop(settings, "include_all_passes")
         

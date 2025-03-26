@@ -30,6 +30,19 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         start_y = 0
         spacing_y = -300
         
+        # Get the selected output formats from settings
+        main_format = settings.main_output_format
+        use_secondary = settings.use_secondary_output
+        secondary_format = settings.secondary_output_format
+        
+        # Get compression codec settings
+        main_compression = settings.main_exr_codec
+        secondary_compression = settings.secondary_exr_codec
+        
+        # Define the specific passes that should go to secondary output
+        # These passes will ONLY go to the secondary output node if it's enabled
+        secondary_passes = ['Depth', 'Position', 'Normal']
+        
         # Track progress for UI feedback
         wm = context.window_manager
         wm.progress_begin(0, len(viewlayers))
@@ -44,7 +57,13 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             rl_node.layer = viewlayer_name
             rl_node.location = (start_x, start_y + (idx * spacing_y))
             
-            # Main output node (16-bit EXR Multilayer)
+            # Identify available cryptomatte passes for this viewlayer
+            cryptomatte_passes = [out.name for out in rl_node.outputs if out.name.startswith('Cryptomatte')]
+            
+            # All passes that should go to secondary output if it's enabled
+            all_secondary_passes = secondary_passes + cryptomatte_passes
+            
+            # Main output node with user-selected format
             main_output_node = tree.nodes.new('CompositorNodeOutputFile')
             main_output_node.name = f"MainOutput_{viewlayer_name}"
             main_output_node.label = f"Main Output {viewlayer_name}"
@@ -56,60 +75,70 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 output_path += os.sep
             main_output_node.base_path = output_path + base_filename + "_" + viewlayer_name
             
-            # Set file format to 16-bit EXR Multilayer
-            main_output_node.format.file_format = 'OPEN_EXR_MULTILAYER'
+            # Set file format based on user selection
+            main_output_node.format.file_format = main_format
+            
+            # Apply compression codec settings for EXR formats
+            if main_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
+                main_output_node.format.exr_codec = main_compression
             
             # Clear existing inputs
             while len(main_output_node.inputs) > 1:
                 main_output_node.inputs.remove(main_output_node.inputs[-1])
             
-            # Create a separate 32-bit EXR output for specific passes
-            extra_output_node = tree.nodes.new('CompositorNodeOutputFile')
-            extra_output_node.name = f"ExtraOutput_{viewlayer_name}"
-            extra_output_node.label = f"Extra Output {viewlayer_name}"
-            extra_output_node.location = (rl_node.location.x + 800, rl_node.location.y)
+            # Create a secondary output node if enabled
+            secondary_output_node = None
+            if use_secondary:
+                secondary_output_node = tree.nodes.new('CompositorNodeOutputFile')
+                secondary_output_node.name = f"SecondaryOutput_{viewlayer_name}"
+                secondary_output_node.label = f"Secondary Output {viewlayer_name}"
+                secondary_output_node.location = (rl_node.location.x + 800, rl_node.location.y)
+                
+                # Set user-selected format for the secondary output
+                secondary_output_node.format.file_format = secondary_format
+                
+                # Apply compression codec settings for EXR formats
+                if secondary_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
+                    secondary_output_node.format.exr_codec = secondary_compression
+                
+                secondary_output_node.base_path = output_path + base_filename + f"_{viewlayer_name}_secondary"
+                
+                # Clear existing inputs for secondary output
+                while len(secondary_output_node.inputs) > 1:
+                    secondary_output_node.inputs.remove(secondary_output_node.inputs[-1])
             
-            # Set 32-bit EXR format
-            extra_output_node.format.file_format = 'OPEN_EXR'
-            extra_output_node.base_path = output_path + base_filename + f"_{viewlayer_name}_extra"
-            
-            # Specific passes to extract
-            extra_passes = ['Position', 'Normal', 'Depth']
-            
-            # Add Cryptomatte passes if they exist
-            cryptomatte_passes = [out for out in rl_node.outputs if out.name.startswith('Cryptomatte')]
-            
-            # Combine extra passes
-            all_extra_passes = extra_passes + [p.name for p in cryptomatte_passes]
-            
-            # Connect passes to the main and extra output nodes
+            # Connect passes to the output nodes
             first_main_connection = True
-            first_extra_connection = True
+            first_secondary_connection = True if use_secondary else False
             
+            # First pass: connect secondary passes if secondary output is enabled
+            if use_secondary:
+                for output in rl_node.outputs:
+                    if output.enabled and output.name in all_secondary_passes:
+                        # Connect to secondary output node
+                        if first_secondary_connection:
+                            secondary_output_node.file_slots[0].path = output.name
+                            tree.links.new(output, secondary_output_node.inputs[0])
+                            first_secondary_connection = False
+                        else:
+                            secondary_output_node.file_slots.new(output.name)
+                            tree.links.new(output, secondary_output_node.inputs[-1])
+            
+            # Second pass: connect all other passes to main output
             for output in rl_node.outputs:
+                # Skip if this pass is already connected to secondary output
+                if use_secondary and output.name in all_secondary_passes:
+                    continue
+                    
                 if output.enabled:
-                    # Determine if this is an extra pass
-                    is_extra_pass = output.name in all_extra_passes
-                    
-                    # Connect to extra output if it's an extra pass
-                    if is_extra_pass:
-                        if first_extra_connection:
-                            extra_output_node.file_slots[0].path = output.name
-                            tree.links.new(output, extra_output_node.inputs[0])
-                            first_extra_connection = False
-                        else:
-                            extra_output_node.file_slots.new(output.name)
-                            tree.links.new(output, extra_output_node.inputs[-1])
-                    
-                    # Connect to main output only if it's NOT an extra pass
-                    elif not is_extra_pass:
-                        if first_main_connection:
-                            main_output_node.file_slots[0].path = output.name
-                            tree.links.new(output, main_output_node.inputs[0])
-                            first_main_connection = False
-                        else:
-                            main_output_node.file_slots.new(output.name)
-                            tree.links.new(output, main_output_node.inputs[-1])
+                    # Connect to main output
+                    if first_main_connection:
+                        main_output_node.file_slots[0].path = output.name
+                        tree.links.new(output, main_output_node.inputs[0])
+                        first_main_connection = False
+                    else:
+                        main_output_node.file_slots.new(output.name)
+                        tree.links.new(output, main_output_node.inputs[-1])
         
         wm.progress_end()
         self.report({'INFO'}, f"Connected {len(viewlayers)} ViewLayers to File Output nodes")
