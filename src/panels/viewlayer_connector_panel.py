@@ -135,6 +135,13 @@ class ViewLayerConnectorSettings(PropertyGroup):
         default=True
     )
     
+    # New setting for auto frame grouping
+    auto_frame_by_prefix: BoolProperty(
+        name="Auto-Frame by Prefix",
+        description="Automatically group nodes with the same prefix in frames",
+        default=True
+    )
+    
     node_spacing: FloatProperty(
         name="Node Spacing",
         description="Spacing between nodes",
@@ -269,6 +276,10 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
 
         row = box.row()
         row.prop(settings, "auto_group")
+        
+        # New option for frame grouping by prefix
+        row = box.row()
+        row.prop(settings, "auto_frame_by_prefix")
 
         row = box.row()
         row.prop(settings, "auto_organize")
@@ -282,7 +293,13 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
         # Organization action buttons
         row = layout.row(align=True)
         row.operator("compositor.organize_nodes", text="Organize Nodes", icon='GRAPH')
+        
         row = layout.row(align=True)
         row.operator("compositor.group_viewlayer_nodes", text="Group Nodes", icon='NODETREE')
+        
+        # New button for prefix-based frame grouping
+        row = layout.row(align=True)
+        row.operator("compositor.group_by_prefix_in_frames", text="Group by Prefix in Frames", icon='SEQUENCE')
+        
         row = layout.row(align=True)
         row.operator("compositor.connect_sorted_viewlayers", text="Connect Sorted ViewLayers", icon='SORTSIZE')

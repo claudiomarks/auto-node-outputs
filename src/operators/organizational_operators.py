@@ -1,7 +1,7 @@
 import bpy
 from bpy.types import Operator
 from bpy.props import EnumProperty
-from ..utils.node_utils import arrange_nodes, clear_all_viewlayer_nodes, group_viewlayer_nodes, sort_viewlayers
+from ..utils.node_utils import arrange_nodes, clear_all_viewlayer_nodes, group_viewlayer_nodes, sort_viewlayers, group_nodes_by_prefix_in_frames
 
 class COMPOSITOR_OT_organize_nodes(Operator):
     """Organize nodes in the compositor"""
@@ -130,4 +130,26 @@ class COMPOSITOR_OT_connect_sorted_viewlayers(Operator):
             arrange_nodes(tree, 'HIERARCHY')
         
         self.report({'INFO'}, f"Connected {len(sorted_viewlayers)} ViewLayers in {self.sort_type} order")
+        return {'FINISHED'}
+
+# New operator for frame-based grouping
+class COMPOSITOR_OT_group_by_prefix_in_frames(Operator):
+    """Group ViewLayer nodes by their prefix and organize them in frames"""
+    bl_idname = "compositor.group_by_prefix_in_frames"
+    bl_label = "Group by Prefix in Frames"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    def execute(self, context):
+        if not context.scene.use_nodes:
+            self.report({'WARNING'}, "Compositor nodes are not enabled")
+            return {'CANCELLED'}
+        
+        tree = context.scene.node_tree
+        frames_created = group_nodes_by_prefix_in_frames(tree)
+        
+        if frames_created > 0:
+            self.report({'INFO'}, f"Created {frames_created} frames for prefix groups")
+        else:
+            self.report({'WARNING'}, "No ViewLayer nodes found to group")
+        
         return {'FINISHED'}

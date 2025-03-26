@@ -1,5 +1,6 @@
 import bpy
 import math
+import re
 
 def create_node_group(tree, nodes, name):
     """Create a group node containing the specified nodes"""
@@ -251,3 +252,88 @@ def group_viewlayer_nodes(tree):
             groups_created += 1
     
     return groups_created
+
+# New functions for prefix-based grouping
+
+def extract_prefix(name):
+    """Extract prefix from a name based on common separators"""
+    # Common separators: underscore, dot, dash, or space
+    separators = ['_', '.', '-', ' ']
+    
+    for sep in separators:
+        if sep in name:
+            # Get the prefix part (before the first separator)
+            return name.split(sep)[0]
+    
+    # If no separator is found, use the first 3 characters or the whole name if shorter
+    return name[:min(3, len(name))]
+
+def group_nodes_by_prefix_in_frames(tree):
+    """Group nodes by their prefix and place them in frames"""
+    viewlayer_nodes = [n for n in tree.nodes if n.type == 'R_LAYERS']
+    
+    # Dictionary to group nodes by their prefix
+    prefix_groups = {}
+    
+    # First, categorize all viewlayer nodes by their prefix
+    for vl_node in viewlayer_nodes:
+        layer_name = vl_node.layer  # Get the original layer name
+        prefix = extract_prefix(layer_name)
+        
+        if prefix not in prefix_groups:
+            prefix_groups[prefix] = []
+            
+        # Find connected output nodes
+        output_nodes = []
+        for out in vl_node.outputs:
+            for link in out.links:
+                if link.to_node.type == 'OUTPUT_FILE' and link.to_node not in output_nodes:
+                    output_nodes.append(link.to_node)
+        
+        # Add the viewlayer node and its outputs to the prefix group
+        prefix_groups[prefix].append((vl_node, output_nodes))
+    
+    # Create frames for each prefix group
+    frames_created = 0
+    vertical_offset = 0
+    frame_spacing = 500  # Space between frames vertically
+    
+    for prefix, node_groups in prefix_groups.items():
+        if not node_groups:  # Skip empty groups
+            continue
+            
+        # Create a frame
+        frame_node = tree.nodes.new('NodeFrame')
+        frame_node.name = f"Frame_{prefix}"
+        frame_node.label = f"Prefix: {prefix}"
+        frame_node.use_custom_color = True
+        
+        # Generate a unique color based on the prefix
+        # This creates a pseudo-random but consistent color for each prefix
+        color_seed = sum(ord(c) for c in prefix)
+        frame_node.color = (
+            (color_seed * 13 % 100) / 100,  # R component
+            (color_seed * 23 % 100) / 100,  # G component
+            (color_seed * 37 % 100) / 100   # B component
+        )
+        
+        # Arrange nodes within the frame
+        horizontal_spacing = 400
+        
+        for i, (vl_node, connected_outputs) in enumerate(node_groups):
+            # Position the viewlayer node and assign it to the frame
+            vl_node.location = (0, -i * 300)
+            vl_node.parent = frame_node
+            
+            # Position and parent the connected output nodes
+            for j, output_node in enumerate(connected_outputs):
+                output_node.location = ((j + 1) * horizontal_spacing, -i * 300)
+                output_node.parent = frame_node
+        
+        # Adjust the frame position
+        frame_node.location = (0, vertical_offset)
+        vertical_offset -= frame_spacing + len(node_groups) * 300
+        
+        frames_created += 1
+    
+    return frames_created

@@ -162,9 +162,12 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         if settings.auto_group:
             from ..utils.node_utils import group_viewlayer_nodes
             group_viewlayer_nodes(tree)
-
+        # Use the new frame grouping by prefix if enabled
+        elif settings.auto_frame_by_prefix:
+            from ..utils.node_utils import group_nodes_by_prefix_in_frames
+            group_nodes_by_prefix_in_frames(tree)
         # Organize the nodes if that option is enabled
-        if settings.auto_organize:
+        elif settings.auto_organize:
             from ..utils.node_utils import arrange_nodes
             arrange_nodes(tree, 'HIERARCHY')
         return {'FINISHED'}
