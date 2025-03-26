@@ -133,15 +133,15 @@ def create_node_group(tree, nodes, name):
 def arrange_nodes(tree, organize_type='GRID'):
     """Arrange nodes in the compositor tree"""
     # Get all nodes
-    nodes = tree.nodes
+    nodes = list(tree.nodes)
     
+    # If no nodes, return immediately
     if not nodes:
-        # No nodes to arrange
         return {'FINISHED'}
     
     if organize_type == 'GRID':
         # Simple grid arrangement
-        grid_size = math.ceil(math.sqrt(len(nodes)))
+        grid_size = max(1, math.ceil(math.sqrt(len(nodes))))
         for i, node in enumerate(nodes):
             row = i // grid_size
             col = i % grid_size
@@ -149,12 +149,11 @@ def arrange_nodes(tree, organize_type='GRID'):
     
     elif organize_type == 'FLOW':
         # Arrange nodes in a left-to-right flow
-        # First, find all render layer nodes (starting points)
         render_layer_nodes = [n for n in nodes if n.type == 'R_LAYERS']
         
         if not render_layer_nodes:
             # Fallback to grid if no render layer nodes
-            grid_size = math.ceil(math.sqrt(len(nodes)))
+            grid_size = max(1, math.ceil(math.sqrt(len(nodes))))
             for i, node in enumerate(nodes):
                 row = i // grid_size
                 col = i % grid_size
@@ -163,38 +162,35 @@ def arrange_nodes(tree, organize_type='GRID'):
             # Position render layer nodes vertically
             for i, node in enumerate(render_layer_nodes):
                 node.location = (0, -i * 300)
-        
-        # TODO: Implement a more sophisticated flow layout algorithm
-        # This would need to follow the connections between nodes
     
     elif organize_type == 'HIERARCHY':
-        # Group nodes by their connections
-        # For each render layer node and its output node
-        viewlayer_nodes = []
-        for n in nodes:
-            if n.type == 'R_LAYERS':
-                # Find connected output nodes
-                output_nodes = [link.to_node for out in n.outputs for link in out.links if link.to_node.type == 'OUTPUT_FILE']
-                viewlayer_nodes.append((n, output_nodes))
+        # Find render layer and output nodes
+        rl_nodes = [n for n in nodes if n.type == 'R_LAYERS']
+        output_nodes = [n for n in nodes if n.type == 'OUTPUT_FILE']
         
-        if not viewlayer_nodes:
-            # Fallback to grid if no viewlayer nodes found
-            grid_size = math.ceil(math.sqrt(len(nodes)))
+        # If no render layer or output nodes, fallback to grid
+        if not rl_nodes or not output_nodes:
+            grid_size = max(1, math.ceil(math.sqrt(len(nodes))))
             for i, node in enumerate(nodes):
                 row = i // grid_size
                 col = i % grid_size
                 node.location = (col * 300, -row * 300)
         else:
-            for i, (rl_node, output_nodes) in enumerate(viewlayer_nodes):
-                # Spread output nodes horizontally
-                x_spacing = 300
-                start_x = 0
+            # Attempt to match render layer nodes with output nodes
+            for i, rl_node in enumerate(rl_nodes):
+                # Find matching output nodes connected to this render layer
+                connected_outputs = [
+                    out_node for out_node in output_nodes 
+                    if any(link.from_node == rl_node for link in out_node.inputs if link.is_valid)
+                ]
                 
                 # Position render layer node
+                start_x = 0
                 rl_node.location = (start_x, -i * 300)
                 
                 # Position output nodes
-                for j, output_node in enumerate(output_nodes):
+                x_spacing = 300
+                for j, output_node in enumerate(connected_outputs):
                     output_node.location = (start_x + (j + 1) * x_spacing, -i * 300)
     
     return {'FINISHED'}
