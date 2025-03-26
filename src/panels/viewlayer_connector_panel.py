@@ -59,7 +59,7 @@ class ViewLayerConnectorSettings(PropertyGroup):
             ('DWAA', "DWAA", "Lossy compression with adjustable quality, one scanline at a time"),
             ('DWAB', "DWAB", "Lossy compression with adjustable quality, in blocks of 32 scanlines")
         ],
-        default='ZIP'
+        default='PXR24'
     )
     
     # Secondary output format
@@ -72,7 +72,7 @@ class ViewLayerConnectorSettings(PropertyGroup):
             ('PNG', "PNG", "Save as PNG file"),
             ('JPEG', "JPEG", "Save as JPEG file")
         ],
-        default='OPEN_EXR'
+        default='OPEN_EXR_MULTILAYER'
     )
     
     # EXR bit depth options for secondary output
