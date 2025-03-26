@@ -57,11 +57,21 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             rl_node.layer = viewlayer_name
             rl_node.location = (start_x, start_y + (idx * spacing_y))
             
-            # Identify available cryptomatte passes for this viewlayer
-            cryptomatte_passes = [out.name for out in rl_node.outputs if out.name.startswith('Cryptomatte')]
+            # Create lists to track what outputs go to which node
+            # We'll collect all outputs first, then connect them
+            main_outputs = []
+            secondary_outputs = []
             
-            # All passes that should go to secondary output if it's enabled
-            all_secondary_passes = secondary_passes + cryptomatte_passes
+            # Gather all available outputs and sort them
+            for output in rl_node.outputs:
+                if not output.enabled:
+                    continue
+                    
+                # Check if this is a pass for secondary output
+                if output.name in secondary_passes or output.name.startswith('Cryptomatte'):
+                    secondary_outputs.append(output)
+                else:
+                    main_outputs.append(output)
             
             # Main output node with user-selected format
             main_output_node = tree.nodes.new('CompositorNodeOutputFile')
@@ -82,7 +92,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             if main_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
                 main_output_node.format.exr_codec = main_compression
             
-            # Clear existing inputs
+            # Clear existing inputs for main output
             while len(main_output_node.inputs) > 1:
                 main_output_node.inputs.remove(main_output_node.inputs[-1])
             
@@ -106,48 +116,34 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 # Clear existing inputs for secondary output
                 while len(secondary_output_node.inputs) > 1:
                     secondary_output_node.inputs.remove(secondary_output_node.inputs[-1])
-            
-            # Connect passes to the output nodes
-            first_main_connection = True
-            first_secondary_connection = True if use_secondary else False
-            
-            # Connect all passes based on their type
-            for output in rl_node.outputs:
-                if not output.enabled:
-                    continue
-                
-                # Check if this is a secondary pass or cryptomatte
-                is_secondary_pass = output.name in secondary_passes
-                is_cryptomatte = output.name.startswith('Cryptomatte')
-                
-                # Connect to secondary output if enabled and it's a secondary pass or cryptomatte
-                if use_secondary and (is_secondary_pass or is_cryptomatte):
-                    if first_secondary_connection:
+                    
+                # Connect secondary passes to secondary output node
+                first_connection = True
+                for output in secondary_outputs:
+                    if first_connection:
                         secondary_output_node.file_slots[0].path = output.name
                         tree.links.new(output, secondary_output_node.inputs[0])
-                        first_secondary_connection = False
+                        first_connection = False
                     else:
                         secondary_output_node.file_slots.new(output.name)
                         tree.links.new(output, secondary_output_node.inputs[-1])
-                # Connect to main output if it's not a secondary pass or cryptomatte
-                elif not is_secondary_pass and not is_cryptomatte:
-                    if first_main_connection:
-                        main_output_node.file_slots[0].path = output.name
-                        tree.links.new(output, main_output_node.inputs[0])
-                        first_main_connection = False
-                    else:
-                        main_output_node.file_slots.new(output.name)
-                        tree.links.new(output, main_output_node.inputs[-1])
-                # If secondary output is disabled but it's a secondary pass or cryptomatte,
-                # still connect to main output
-                elif not use_secondary:
-                    if first_main_connection:
-                        main_output_node.file_slots[0].path = output.name
-                        tree.links.new(output, main_output_node.inputs[0])
-                        first_main_connection = False
-                    else:
-                        main_output_node.file_slots.new(output.name)
-                        tree.links.new(output, main_output_node.inputs[-1])
+            
+            # Connect main passes to main output node
+            # If secondary output is disabled, include secondary passes here too
+            outputs_for_main = main_outputs.copy()
+            if not use_secondary:
+                outputs_for_main.extend(secondary_outputs)
+                
+            # Now connect all the outputs for the main node
+            first_connection = True
+            for output in outputs_for_main:
+                if first_connection:
+                    main_output_node.file_slots[0].path = output.name
+                    tree.links.new(output, main_output_node.inputs[0])
+                    first_connection = False
+                else:
+                    main_output_node.file_slots.new(output.name)
+                    tree.links.new(output, main_output_node.inputs[-1])
         
         wm.progress_end()
         self.report({'INFO'}, f"Connected {len(viewlayers)} ViewLayers to File Output nodes")
