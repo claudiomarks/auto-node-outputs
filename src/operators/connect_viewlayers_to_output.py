@@ -72,7 +72,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                     continue
                     
                 # Check if this is a pass for secondary output
-                if output.name in secondary_passes or output.name.startswith('Cryptomatte'):
+                if output.name in secondary_passes or output.name.startswith('Crypto'):
                     secondary_outputs.append(output)
                 else:
                     main_outputs.append(output)
