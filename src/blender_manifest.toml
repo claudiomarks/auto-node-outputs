@@ -1,30 +1,17 @@
-# Blender Add-on Manifest
-# See https://docs.blender.org/manual/en/latest/advanced/blender_directory_layout.html#manifest-toml
-# Created: 2025-03-26 19:09:53 UTC
-# Author: claudiomarks
-
-[package]
-# Required fields
+schema_version = "1.0.0"
 name = "Auto Node Outputs"
 author = "claudiomarks"
-version = "1.6.0"
-blender_version_min = "4.3.0"
+version = "1.6.1"
 id = "auto_node_outputs"
-
-# Optional fields
-blender_version_max = ""
-description = "Automatically connect ViewLayers to File Output nodes in the Compositor"
-warning = ""
-doc_url = ""
-tracker_url = "https://github.com/claudiomarks/auto-node-outputs/issues"
-license = "GPL-3.0"
-category = "Compositing"
-
-[package.requirements]
-# No additional requirements
-
-[distribution]
-# Files to include in the addon distribution
+tagline = "Automatically connect ViewLayers to File Output nodes"
+maintainer = "claudiomarks"
+type = "add-on"
+tags = ["Compositing", "Render"]
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+copyright = [
+    "2025 Histeria"
+]
 include = [
     "src/**/*.py",
     "README.md",
@@ -37,10 +24,3 @@ exclude = [
     "**/.git/**",
     "**/.github/**",
 ]
-
-[metadata]
-# Additional metadata
-tags = ["compositor", "automation", "render", "output", "viewlayer"]
-maintainer = "claudiomarks"
-contributors = ["claudiomarks"]
-updated_at = "2025-03-26 19:09:53"
