@@ -179,10 +179,15 @@ def arrange_nodes(tree, organize_type='GRID'):
             # Attempt to match render layer nodes with output nodes
             for i, rl_node in enumerate(rl_nodes):
                 # Find matching output nodes connected to this render layer
-                connected_outputs = [
-                    out_node for out_node in output_nodes 
-                    if any(link.from_node == rl_node for link in tree.links if link.to_node == out_node and link.is_valid)
-                ]
+                # Fixed: Check link validity properly without accessing is_valid on sockets
+                connected_outputs = []
+                for out_node in output_nodes:
+                    for link in tree.links:
+                        # Check if this link connects the render layer node to this output node
+                        if link.from_node == rl_node and link.to_node == out_node:
+                            if out_node not in connected_outputs:
+                                connected_outputs.append(out_node)
+                                break
                 
                 # Position render layer node
                 start_x = 0
