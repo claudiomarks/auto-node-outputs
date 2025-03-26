@@ -6,14 +6,20 @@ from bpy.types import Operator
 def clean_viewlayer_name(name):
     """
     Clean the viewlayer name:
-    1. Remove suffix that begins with a dot (if present)
-    2. Replace remaining dots with hyphens
+    1. Replace dots with underscores
+    2. Remove the final .vl suffix if present
+    3. Add a trailing underscore
     """
-    # First, split on the first dot to remove any suffix
-    base_name = name.split('.', 1)[0]
+    # Remove .vl suffix if present
+    if name.endswith(".vl"):
+        name = name[:-3]
     
-    # Replace any remaining dots with hyphens
-    cleaned_name = base_name.replace('.', '-')
+    # Replace dots with underscores
+    cleaned_name = name.replace('.', '_')
+    
+    # Add trailing underscore if not already present
+    if not cleaned_name.endswith('_'):
+        cleaned_name += '_'
     
     return cleaned_name
 
@@ -101,8 +107,8 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             
             # Main output node with user-selected format
             main_output_node = tree.nodes.new('CompositorNodeOutputFile')
-            main_output_node.name = f"{base_filename}.{cleaned_viewlayer_name}_{main_bit_depth_suffix}"
-            main_output_node.label = f"{base_filename}.{cleaned_viewlayer_name}_{main_bit_depth_suffix}"
+            main_output_node.name = f"{base_filename}_{cleaned_viewlayer_name}_{main_bit_depth_suffix}_"
+            main_output_node.label = f"{base_filename}_{cleaned_viewlayer_name}_{main_bit_depth_suffix}_"
             main_output_node.location = (rl_node.location.x + 400, rl_node.location.y)
             
             # Use the custom output path from settings
@@ -111,7 +117,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 output_path += os.sep
                 
             # Create file path in the new format
-            main_output_node.base_path = output_path + f"{base_filename}.{cleaned_viewlayer_name}_{main_bit_depth_suffix}"
+            main_output_node.base_path = output_path + f"{base_filename}_{cleaned_viewlayer_name}_{main_bit_depth_suffix}_"
             
             # Set file format based on user selection
             main_output_node.format.file_format = main_format
@@ -132,8 +138,8 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 secondary_bit_depth_suffix = "EXR16" if secondary_bitdepth == '16' else "EXR32"
                 
                 secondary_output_node = tree.nodes.new('CompositorNodeOutputFile')
-                secondary_output_node.name = f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}"
-                secondary_output_node.label = f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}"
+                secondary_output_node.name = f"{base_filename}_{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}_"
+                secondary_output_node.label = f"{base_filename}_{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}_"
                 secondary_output_node.location = (rl_node.location.x + 800, rl_node.location.y)
                 
                 # Set user-selected format for the secondary output
@@ -144,7 +150,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                     secondary_output_node.format.exr_codec = secondary_compression
                     secondary_output_node.format.color_depth = secondary_bitdepth
                 
-                secondary_output_node.base_path = output_path + f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}"
+                secondary_output_node.base_path = output_path + f"{base_filename}_{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}_"
                 
                 # Clear existing inputs for secondary output
                 while len(secondary_output_node.inputs) > 1:
