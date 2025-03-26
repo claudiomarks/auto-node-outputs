@@ -125,19 +125,6 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
         row = box.row()
         row.prop(settings, "custom_output_path")
         
-        # Preview section
-        preview_box = layout.box()
-        preview_box.label(text="Preview", icon='PRESET')
-        
-        for idx, viewlayer in enumerate(context.scene.view_layers):
-            if idx < 3:  # Only show first 3 for preview
-                row = preview_box.row()
-                row.label(text=viewlayer.name, icon='RENDER_RESULT')
-            elif idx == 3:
-                row = preview_box.row()
-                row.label(text=f"... and {viewlayer_count - 3} more")
-                break
-        
         # Action buttons section
         layout.separator()
         row = layout.row(align=True)
@@ -149,16 +136,6 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
         clear_op = row.operator("compositor.clear_viewlayer_outputs", 
                                text="Clear Existing Nodes", 
                                icon='TRASH')
-        
-        # Help box
-        help_box = layout.box()
-        help_box.label(text="Help", icon='QUESTION')
-        row = help_box.row()
-        row.scale_y = 0.7
-        row.label(text="This will create File Output nodes for each")
-        row = help_box.row()
-        row.scale_y = 0.7
-        row.label(text="ViewLayer and connect available passes.")
 
         # Organizational options
         box = layout.box()
