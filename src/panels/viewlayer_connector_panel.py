@@ -35,6 +35,17 @@ class ViewLayerConnectorSettings(PropertyGroup):
         default='OPEN_EXR_MULTILAYER'
     )
     
+    # EXR bit depth options for main output
+    main_exr_bitdepth: EnumProperty(
+        name="Main EXR Bit Depth",
+        description="Bit depth for main output EXR files",
+        items=[
+            ('32', "Full Float (32-bit)", "Full precision floating point (slower, but higher quality)"),
+            ('16', "Half Float (16-bit)", "Half precision floating point (faster, smaller files)")
+        ],
+        default='16'
+    )
+    
     # EXR compression options for main output
     main_exr_codec: EnumProperty(
         name="Main EXR Compression",
@@ -62,6 +73,17 @@ class ViewLayerConnectorSettings(PropertyGroup):
             ('JPEG', "JPEG", "Save as JPEG file")
         ],
         default='OPEN_EXR'
+    )
+    
+    # EXR bit depth options for secondary output
+    secondary_exr_bitdepth: EnumProperty(
+        name="Secondary EXR Bit Depth",
+        description="Bit depth for secondary output EXR files",
+        items=[
+            ('32', "Full Float (32-bit)", "Full precision floating point (slower, but higher quality)"),
+            ('16', "Half Float (16-bit)", "Half precision floating point (faster, smaller files)")
+        ],
+        default='32'  # Default to full float for secondary since it often contains depth and position data
     )
     
     # EXR compression options for secondary output
@@ -187,8 +209,11 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
         row = box.row()
         row.prop(settings, "main_output_format")
         
-        # Show compression options for EXR formats only
+        # Show bit depth and compression options for EXR formats only
         if settings.main_output_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
+            row = box.row()
+            row.prop(settings, "main_exr_bitdepth")
+            
             row = box.row()
             row.prop(settings, "main_exr_codec")
         
@@ -205,8 +230,11 @@ class COMPOSITOR_PT_viewlayer_connector(Panel):
             row = box.row()
             row.prop(settings, "secondary_output_format")
             
-            # Show compression options for EXR formats only
+            # Show bit depth and compression options for EXR formats only
             if settings.secondary_output_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
+                row = box.row()
+                row.prop(settings, "secondary_exr_bitdepth")
+                
                 row = box.row()
                 row.prop(settings, "secondary_exr_codec")
             

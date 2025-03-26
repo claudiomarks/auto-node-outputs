@@ -30,7 +30,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         start_y = 0
         spacing_y = -300
         
-        # Get the selected output formats from settings
+        # Get the selected output formats and settings from user preferences
         main_format = settings.main_output_format
         use_secondary = settings.use_secondary_output
         secondary_format = settings.secondary_output_format
@@ -38,6 +38,10 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         # Get compression codec settings
         main_compression = settings.main_exr_codec
         secondary_compression = settings.secondary_exr_codec
+        
+        # Get bit depth settings
+        main_bitdepth = settings.main_exr_bitdepth
+        secondary_bitdepth = settings.secondary_exr_bitdepth
         
         # Define the specific passes that should go to secondary output
         # These passes will ONLY go to the secondary output node if it's enabled
@@ -88,9 +92,15 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             # Set file format based on user selection
             main_output_node.format.file_format = main_format
             
-            # Apply compression codec settings for EXR formats
+            # Apply compression codec and bit depth settings for EXR formats
             if main_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
                 main_output_node.format.exr_codec = main_compression
+                
+                # Set the bit depth (half float = 16-bit, full float = 32-bit)
+                if main_bitdepth == '16':
+                    main_output_node.format.use_zbuffer = False  # False = half float (16-bit)
+                else:  # '32'
+                    main_output_node.format.use_zbuffer = True   # True = full float (32-bit)
             
             # Clear existing inputs for main output
             while len(main_output_node.inputs) > 1:
@@ -107,9 +117,15 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 # Set user-selected format for the secondary output
                 secondary_output_node.format.file_format = secondary_format
                 
-                # Apply compression codec settings for EXR formats
+                # Apply compression codec and bit depth settings for EXR formats
                 if secondary_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
                     secondary_output_node.format.exr_codec = secondary_compression
+                    
+                    # Set the bit depth (half float = 16-bit, full float = 32-bit)
+                    if secondary_bitdepth == '16':
+                        secondary_output_node.format.use_zbuffer = False  # False = half float (16-bit)
+                    else:  # '32'
+                        secondary_output_node.format.use_zbuffer = True   # True = full float (32-bit)
                 
                 secondary_output_node.base_path = output_path + base_filename + f"_{viewlayer_name}_secondary"
                 
