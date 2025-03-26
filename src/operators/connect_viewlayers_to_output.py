@@ -44,24 +44,24 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             rl_node.layer = viewlayer_name
             rl_node.location = (start_x, start_y + (idx * spacing_y))
             
-            # Main output node (standard settings)
-            output_node = tree.nodes.new('CompositorNodeOutputFile')
-            output_node.name = f"Output_{viewlayer_name}"
-            output_node.label = f"Output {viewlayer_name}"
-            output_node.location = (rl_node.location.x + 400, rl_node.location.y)
+            # Main output node (16-bit EXR Multilayer)
+            main_output_node = tree.nodes.new('CompositorNodeOutputFile')
+            main_output_node.name = f"MainOutput_{viewlayer_name}"
+            main_output_node.label = f"Main Output {viewlayer_name}"
+            main_output_node.location = (rl_node.location.x + 400, rl_node.location.y)
             
             # Use the custom output path from settings
             output_path = settings.custom_output_path
             if not output_path.endswith(os.sep):
                 output_path += os.sep
-            output_node.base_path = output_path + base_filename + "_" + viewlayer_name
+            main_output_node.base_path = output_path + base_filename + "_" + viewlayer_name
             
-            # Set file format from settings
-            output_node.format.file_format = settings.file_format
+            # Set file format to 16-bit EXR Multilayer
+            main_output_node.format.file_format = 'OPEN_EXR_MULTILAYER'
             
             # Clear existing inputs
-            while len(output_node.inputs) > 1:
-                output_node.inputs.remove(output_node.inputs[-1])
+            while len(main_output_node.inputs) > 1:
+                main_output_node.inputs.remove(main_output_node.inputs[-1])
             
             # Create a separate 32-bit EXR output for specific passes
             extra_output_node = tree.nodes.new('CompositorNodeOutputFile')
@@ -91,16 +91,6 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                     # Determine if this is an extra pass
                     is_extra_pass = output.name in all_extra_passes
                     
-                    # Connect to main output if not extra pass or including all passes
-                    if not is_extra_pass or settings.include_all_passes:
-                        if first_main_connection:
-                            output_node.file_slots[0].path = output.name
-                            tree.links.new(output, output_node.inputs[0])
-                            first_main_connection = False
-                        else:
-                            output_node.file_slots.new(output.name)
-                            tree.links.new(output, output_node.inputs[-1])
-                    
                     # Connect to extra output if it's an extra pass
                     if is_extra_pass:
                         if first_extra_connection:
@@ -110,6 +100,16 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                         else:
                             extra_output_node.file_slots.new(output.name)
                             tree.links.new(output, extra_output_node.inputs[-1])
+                    
+                    # Connect to main output only if it's NOT an extra pass
+                    elif not is_extra_pass:
+                        if first_main_connection:
+                            main_output_node.file_slots[0].path = output.name
+                            tree.links.new(output, main_output_node.inputs[0])
+                            first_main_connection = False
+                        else:
+                            main_output_node.file_slots.new(output.name)
+                            tree.links.new(output, main_output_node.inputs[-1])
         
         wm.progress_end()
         self.report({'INFO'}, f"Connected {len(viewlayers)} ViewLayers to File Output nodes")

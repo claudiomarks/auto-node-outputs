@@ -166,11 +166,16 @@ def arrange_nodes(tree, organize_type='GRID'):
                 viewlayer_nodes.append((n, output_nodes))
         
         for i, (rl_node, output_nodes) in enumerate(viewlayer_nodes):
-            x_positions = [0, 300]  # Standard main output, extra output
-            rl_node.location = (0, -i * 300)
+            # Spread output nodes horizontally
+            x_spacing = 300
+            start_x = 0
             
+            # Position render layer node
+            rl_node.location = (start_x, -i * 300)
+            
+            # Position output nodes
             for j, output_node in enumerate(output_nodes):
-                output_node.location = (x_positions[j], -i * 300)
+                output_node.location = (start_x + (j + 1) * x_spacing, -i * 300)
     
     return {'FINISHED'}
 
