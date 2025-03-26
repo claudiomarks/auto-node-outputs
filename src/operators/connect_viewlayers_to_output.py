@@ -97,10 +97,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 main_output_node.format.exr_codec = main_compression
                 
                 # Set the bit depth (half float = 16-bit, full float = 32-bit)
-                if main_bitdepth == '16':
-                    main_output_node.format.use_zbuffer = False  # False = half float (16-bit)
-                else:  # '32'
-                    main_output_node.format.use_zbuffer = True   # True = full float (32-bit)
+                main_output_node.format.color_depth = main_bitdepth
             
             # Clear existing inputs for main output
             while len(main_output_node.inputs) > 1:
@@ -122,10 +119,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                     secondary_output_node.format.exr_codec = secondary_compression
                     
                     # Set the bit depth (half float = 16-bit, full float = 32-bit)
-                    if secondary_bitdepth == '16':
-                        secondary_output_node.format.use_zbuffer = False  # False = half float (16-bit)
-                    else:  # '32'
-                        secondary_output_node.format.use_zbuffer = True   # True = full float (32-bit)
+                    secondary_output_node.format.color_depth = secondary_bitdepth
                 
                 secondary_output_node.base_path = output_path + base_filename + f"_{viewlayer_name}_secondary"
                 

@@ -40,8 +40,8 @@ class ViewLayerConnectorSettings(PropertyGroup):
         name="Main EXR Bit Depth",
         description="Bit depth for main output EXR files",
         items=[
-            ('32', "Full Float (32-bit)", "Full precision floating point (slower, but higher quality)"),
-            ('16', "Half Float (16-bit)", "Half precision floating point (faster, smaller files)")
+            ('16', "Half Float (16-bit)", "Half precision floating point (faster, smaller files)"),
+            ('32', "Full Float (32-bit)", "Full precision floating point (slower, but higher quality)")
         ],
         default='16'
     )
@@ -80,8 +80,8 @@ class ViewLayerConnectorSettings(PropertyGroup):
         name="Secondary EXR Bit Depth",
         description="Bit depth for secondary output EXR files",
         items=[
-            ('32', "Full Float (32-bit)", "Full precision floating point (slower, but higher quality)"),
-            ('16', "Half Float (16-bit)", "Half precision floating point (faster, smaller files)")
+            ('16', "Half Float (16-bit)", "Half precision floating point (faster, smaller files)"),
+            ('32', "Full Float (32-bit)", "Full precision floating point (slower, but higher quality)")
         ],
         default='32'  # Default to full float for secondary since it often contains depth and position data
     )
