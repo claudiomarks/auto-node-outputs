@@ -3,12 +3,17 @@ from bpy.props import PointerProperty
 from .operators.connect_viewlayers_to_output import COMPOSITOR_OT_connect_viewlayers_to_output
 from .operators.additional_operators import COMPOSITOR_OT_setup_nodes, COMPOSITOR_OT_clear_viewlayer_outputs
 from .panels.viewlayer_connector_panel import COMPOSITOR_PT_viewlayer_connector, ViewLayerConnectorSettings
-from .operators.organizational_operators import COMPOSITOR_OT_organize_nodes, COMPOSITOR_OT_group_viewlayer_nodes, COMPOSITOR_OT_connect_sorted_viewlayers
+from .operators.organizational_operators import (
+    COMPOSITOR_OT_organize_nodes, 
+    COMPOSITOR_OT_group_viewlayer_nodes, 
+    COMPOSITOR_OT_connect_sorted_viewlayers,
+    COMPOSITOR_OT_group_by_prefix_in_frames
+)
 
 bl_info = {
     "name": "Auto Node Outputs",
-    "author": "Claude",
-    "version": (1, 1),
+    "author": "Claudin",
+    "version": (1, 5, 7),
     "blender": (4, 3, 0),
     "location": "Compositor > Node > ViewLayer Export",
     "description": "Automatically connect ViewLayers to File Output nodes",
@@ -23,6 +28,7 @@ classes = (
     COMPOSITOR_OT_organize_nodes,
     COMPOSITOR_OT_group_viewlayer_nodes, 
     COMPOSITOR_OT_connect_sorted_viewlayers,
+    COMPOSITOR_OT_group_by_prefix_in_frames,
     COMPOSITOR_PT_viewlayer_connector,
 )
 

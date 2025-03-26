@@ -1,7 +1,12 @@
 import bpy
 from bpy.types import Operator
 from bpy.props import EnumProperty
-from ..utils.node_utils import arrange_nodes, clear_all_viewlayer_nodes, group_viewlayer_nodes, sort_viewlayers, group_nodes_by_prefix_in_frames
+from ..utils.node_utils import (
+    arrange_nodes, 
+    clear_all_viewlayer_nodes, 
+    group_nodes_by_prefix_in_frames, 
+    sort_viewlayers
+)
 
 class COMPOSITOR_OT_organize_nodes(Operator):
     """Organize nodes in the compositor"""
@@ -31,7 +36,7 @@ class COMPOSITOR_OT_organize_nodes(Operator):
         return {'FINISHED'}
 
 class COMPOSITOR_OT_group_viewlayer_nodes(Operator):
-    """Group each ViewLayer node with its corresponding output node"""
+    """Group each ViewLayer node with its corresponding output node using frames"""
     bl_idname = "compositor.group_viewlayer_nodes"
     bl_label = "Group ViewLayer Nodes"
     bl_options = {'REGISTER', 'UNDO'}
@@ -42,10 +47,10 @@ class COMPOSITOR_OT_group_viewlayer_nodes(Operator):
             return {'CANCELLED'}
         
         tree = context.scene.node_tree
-        groups_created = group_viewlayer_nodes(tree)
+        frames_created = group_nodes_by_prefix_in_frames(tree)
         
-        if groups_created > 0:
-            self.report({'INFO'}, f"Created {groups_created} node groups")
+        if frames_created > 0:
+            self.report({'INFO'}, f"Created {frames_created} frame groups")
         else:
             self.report({'WARNING'}, "No ViewLayer nodes found to group")
         
@@ -121,18 +126,17 @@ class COMPOSITOR_OT_connect_sorted_viewlayers(Operator):
                         output_node.file_slots.new(output.name)
                         tree.links.new(output, output_node.inputs[-1])
         
-        # Group the nodes if that option is enabled
-        if settings.auto_group:
-            group_viewlayer_nodes(tree)
-        
+        # Group the nodes by prefix in frames
+        if settings.auto_frame_by_prefix:
+            group_nodes_by_prefix_in_frames(tree)
         # Organize the nodes if that option is enabled
-        if settings.auto_organize:
+        elif settings.auto_organize:
             arrange_nodes(tree, 'HIERARCHY')
         
         self.report({'INFO'}, f"Connected {len(sorted_viewlayers)} ViewLayers in {self.sort_type} order")
         return {'FINISHED'}
 
-# New operator for frame-based grouping
+# Dedicated operator for frame-based grouping
 class COMPOSITOR_OT_group_by_prefix_in_frames(Operator):
     """Group ViewLayer nodes by their prefix and organize them in frames"""
     bl_idname = "compositor.group_by_prefix_in_frames"

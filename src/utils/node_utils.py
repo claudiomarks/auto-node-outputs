@@ -208,7 +208,6 @@ def get_connected_output(tree, node):
             if link.to_node.type == 'OUTPUT_FILE':
                 return link.to_node
     return None
-
 def sort_viewlayers(scene, sort_type='ALPHABETICAL'):
     """Sort viewlayers by the specified method"""
     viewlayers = list(scene.view_layers)
@@ -236,24 +235,6 @@ def clear_all_viewlayer_nodes(tree):
         tree.nodes.remove(node)
     
     return len(nodes_to_remove)
-
-def group_viewlayer_nodes(tree):
-    """Group each viewlayer node with its corresponding output nodes"""
-    viewlayer_nodes = [n for n in tree.nodes if n.type == 'R_LAYERS']
-    groups_created = 0
-    
-    for vl_node in viewlayer_nodes:
-        # Find all connected output nodes
-        output_nodes = [link.to_node for out in vl_node.outputs for link in out.links if link.to_node.type == 'OUTPUT_FILE']
-        
-        if output_nodes:
-            group_name = f"ViewLayer_{vl_node.name}_Group"
-            create_node_group(tree, [vl_node] + output_nodes, group_name)
-            groups_created += 1
-    
-    return groups_created
-
-# New functions for prefix-based grouping
 
 def extract_prefix(name):
     """Extract prefix from a name based on common separators"""
@@ -321,7 +302,7 @@ def group_nodes_by_prefix_in_frames(tree):
         horizontal_spacing = 400
         
         for i, (vl_node, connected_outputs) in enumerate(node_groups):
-            # Position the viewlayer node and assign it to the frame
+            # Position the viewlayer node within this frame's group
             vl_node.location = (0, -i * 300)
             vl_node.parent = frame_node
             
@@ -337,3 +318,8 @@ def group_nodes_by_prefix_in_frames(tree):
         frames_created += 1
     
     return frames_created
+
+def group_viewlayer_nodes(tree):
+    """Group ViewLayer nodes by their prefix in frames instead of node groups"""
+    # Use frame grouping instead of node groups for RenderLayer nodes
+    return group_nodes_by_prefix_in_frames(tree)
