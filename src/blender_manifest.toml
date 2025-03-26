@@ -7,7 +7,7 @@
 # Required fields
 name = "Auto Node Outputs"
 author = "claudiomarks"
-version = "1.2.0"
+version = "1.6.0"
 blender_version_min = "4.3.0"
 id = "auto_node_outputs"
 

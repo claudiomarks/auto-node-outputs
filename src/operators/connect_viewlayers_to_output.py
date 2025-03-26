@@ -132,8 +132,8 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 secondary_bit_depth_suffix = "EXR16" if secondary_bitdepth == '16' else "EXR32"
                 
                 secondary_output_node = tree.nodes.new('CompositorNodeOutputFile')
-                secondary_output_node.name = f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}_secondary"
-                secondary_output_node.label = f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}_secondary"
+                secondary_output_node.name = f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}"
+                secondary_output_node.label = f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}"
                 secondary_output_node.location = (rl_node.location.x + 800, rl_node.location.y)
                 
                 # Set user-selected format for the secondary output
@@ -144,7 +144,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                     secondary_output_node.format.exr_codec = secondary_compression
                     secondary_output_node.format.color_depth = secondary_bitdepth
                 
-                secondary_output_node.base_path = output_path + f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}_secondary"
+                secondary_output_node.base_path = output_path + f"{base_filename}.{cleaned_viewlayer_name}_{secondary_bit_depth_suffix}"
                 
                 # Clear existing inputs for secondary output
                 while len(secondary_output_node.inputs) > 1:
