@@ -181,7 +181,7 @@ def arrange_nodes(tree, organize_type='GRID'):
                 # Find matching output nodes connected to this render layer
                 connected_outputs = [
                     out_node for out_node in output_nodes 
-                    if any(link.from_node == rl_node for link in out_node.inputs if link.is_valid)
+                    if any(link.from_node == rl_node for link in tree.links if link.to_node == out_node and link.is_valid)
                 ]
                 
                 # Position render layer node
