@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+id = "auto-node-outputs"
+name = "Auto Node Outputs"
+version = "1.5.8"
+tagline = ""
+maintainer = "Claudin <claudiomarks1@gmail.com>"
+type = "add-on"
+tags = ["3D View", "Render", "Compositing"]
+blender_version_min = "4.3.0"
+license = ["SPDX:GPL-3.0-or-later"]
+website = "https://docs.blender.org/manual/en/latest/addons/interface/amaranth.html"
+copyright = [
+    "2025 Histeria"
+]

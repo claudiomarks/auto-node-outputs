@@ -45,7 +45,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         
         # Define the specific passes that should go to secondary output
         # These passes will ONLY go to the secondary output node if it's enabled
-        secondary_passes = ['Depth', 'Position', 'Normal']
+        secondary_passes = ['Depth', 'Position', 'Normal', 'Vector']
         
         # Track progress for UI feedback
         wm = context.window_manager
