@@ -158,12 +158,19 @@ def arrange_nodes(tree, organize_type='GRID'):
     elif organize_type == 'HIERARCHY':
         # Group nodes by their connections
         # For each render layer node and its output node
-        viewlayer_nodes = [(n, get_connected_output(tree, n)) for n in nodes if n.type == 'R_LAYERS']
+        viewlayer_nodes = []
+        for n in nodes:
+            if n.type == 'R_LAYERS':
+                # Find connected output nodes
+                output_nodes = [link.to_node for out in n.outputs for link in out.links if link.to_node.type == 'OUTPUT_FILE']
+                viewlayer_nodes.append((n, output_nodes))
         
-        for i, (rl_node, output_node) in enumerate(viewlayer_nodes):
-            if output_node:
-                rl_node.location = (0, -i * 300)
-                output_node.location = (300, -i * 300)
+        for i, (rl_node, output_nodes) in enumerate(viewlayer_nodes):
+            x_positions = [0, 300]  # Standard main output, extra output
+            rl_node.location = (0, -i * 300)
+            
+            for j, output_node in enumerate(output_nodes):
+                output_node.location = (x_positions[j], -i * 300)
     
     return {'FINISHED'}
 
@@ -204,15 +211,17 @@ def clear_all_viewlayer_nodes(tree):
     return len(nodes_to_remove)
 
 def group_viewlayer_nodes(tree):
-    """Group each viewlayer node with its corresponding output node"""
+    """Group each viewlayer node with its corresponding output nodes"""
     viewlayer_nodes = [n for n in tree.nodes if n.type == 'R_LAYERS']
     groups_created = 0
     
     for vl_node in viewlayer_nodes:
-        output_node = get_connected_output(tree, vl_node)
-        if output_node:
+        # Find all connected output nodes
+        output_nodes = [link.to_node for out in vl_node.outputs for link in out.links if link.to_node.type == 'OUTPUT_FILE']
+        
+        if output_nodes:
             group_name = f"ViewLayer_{vl_node.name}_Group"
-            create_node_group(tree, [vl_node, output_node], group_name)
+            create_node_group(tree, [vl_node] + output_nodes, group_name)
             groups_created += 1
     
     return groups_created
