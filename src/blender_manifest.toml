@@ -1,14 +1,45 @@
-schema_version = "1.0.0"
-id = "auto-node-outputs"
+# Blender Add-on Manifest
+# See https://docs.blender.org/manual/en/latest/advanced/blender_directory_layout.html#manifest-toml
+# Created: 2025-03-26 19:04:30 UTC
+# Author: claudiomarks
+
+[package]
+# Required fields
 name = "Auto Node Outputs"
-version = "1.5.8"
-tagline = ""
-maintainer = "Claudin <claudiomarks1@gmail.com>"
-type = "add-on"
-tags = ["3D View", "Render", "Compositing"]
+author = "claudiomarks"
+version = "1.2.0"
 blender_version_min = "4.3.0"
-license = ["SPDX:GPL-3.0-or-later"]
-website = "https://docs.blender.org/manual/en/latest/addons/interface/amaranth.html"
-copyright = [
-    "2025 Histeria"
+
+# Optional fields
+blender_version_max = ""
+description = "Automatically connect ViewLayers to File Output nodes in the Compositor"
+warning = ""
+doc_url = ""
+tracker_url = "https://github.com/claudiomarks/auto-node-outputs/issues"
+license = "GPL-3.0"
+category = "Compositing"
+
+[package.requirements]
+# No additional requirements
+
+[distribution]
+# Files to include in the addon distribution
+include = [
+    "src/**/*.py",
+    "README.md",
+    "__init__.py",
 ]
+
+# Files to exclude from the addon distribution
+exclude = [
+    "**/__pycache__/**",
+    "**/.git/**",
+    "**/.github/**",
+]
+
+[metadata]
+# Additional metadata
+tags = ["compositor", "automation", "render", "output", "viewlayer"]
+maintainer = "claudiomarks"
+contributors = ["claudiomarks"]
+updated_at = "2025-03-26 19:04:30"
