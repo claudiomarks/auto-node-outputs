@@ -135,6 +135,10 @@ def arrange_nodes(tree, organize_type='GRID'):
     # Get all nodes
     nodes = tree.nodes
     
+    if not nodes:
+        # No nodes to arrange
+        return {'FINISHED'}
+    
     if organize_type == 'GRID':
         # Simple grid arrangement
         grid_size = math.ceil(math.sqrt(len(nodes)))
@@ -148,9 +152,17 @@ def arrange_nodes(tree, organize_type='GRID'):
         # First, find all render layer nodes (starting points)
         render_layer_nodes = [n for n in nodes if n.type == 'R_LAYERS']
         
-        # Position render layer nodes vertically
-        for i, node in enumerate(render_layer_nodes):
-            node.location = (0, -i * 300)
+        if not render_layer_nodes:
+            # Fallback to grid if no render layer nodes
+            grid_size = math.ceil(math.sqrt(len(nodes)))
+            for i, node in enumerate(nodes):
+                row = i // grid_size
+                col = i % grid_size
+                node.location = (col * 300, -row * 300)
+        else:
+            # Position render layer nodes vertically
+            for i, node in enumerate(render_layer_nodes):
+                node.location = (0, -i * 300)
         
         # TODO: Implement a more sophisticated flow layout algorithm
         # This would need to follow the connections between nodes
@@ -165,17 +177,25 @@ def arrange_nodes(tree, organize_type='GRID'):
                 output_nodes = [link.to_node for out in n.outputs for link in out.links if link.to_node.type == 'OUTPUT_FILE']
                 viewlayer_nodes.append((n, output_nodes))
         
-        for i, (rl_node, output_nodes) in enumerate(viewlayer_nodes):
-            # Spread output nodes horizontally
-            x_spacing = 300
-            start_x = 0
-            
-            # Position render layer node
-            rl_node.location = (start_x, -i * 300)
-            
-            # Position output nodes
-            for j, output_node in enumerate(output_nodes):
-                output_node.location = (start_x + (j + 1) * x_spacing, -i * 300)
+        if not viewlayer_nodes:
+            # Fallback to grid if no viewlayer nodes found
+            grid_size = math.ceil(math.sqrt(len(nodes)))
+            for i, node in enumerate(nodes):
+                row = i // grid_size
+                col = i % grid_size
+                node.location = (col * 300, -row * 300)
+        else:
+            for i, (rl_node, output_nodes) in enumerate(viewlayer_nodes):
+                # Spread output nodes horizontally
+                x_spacing = 300
+                start_x = 0
+                
+                # Position render layer node
+                rl_node.location = (start_x, -i * 300)
+                
+                # Position output nodes
+                for j, output_node in enumerate(output_nodes):
+                    output_node.location = (start_x + (j + 1) * x_spacing, -i * 300)
     
     return {'FINISHED'}
 
