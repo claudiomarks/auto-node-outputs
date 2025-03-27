@@ -13,7 +13,7 @@ from .operators.organizational_operators import (
 bl_info = {
     "name": "Auto Node Outputs",
     "author": "Claudin",
-    "version": (1, 6, 3),
+    "version": (1, 6, 5),
     "blender": (4, 3, 0),
     "location": "Compositor > Node > ViewLayer Export",
     "description": "Automatically connect ViewLayers to File Output nodes",

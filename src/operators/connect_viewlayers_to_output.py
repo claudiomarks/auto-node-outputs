@@ -117,7 +117,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 output_path += os.sep
                 
             # Create file path in the new format
-            main_output_node.base_path = output_path + f"{base_filename}_{cleaned_viewlayer_name}{main_bit_depth_suffix}_"
+            main_output_node.base_path = output_path + f"{cleaned_viewlayer_name}/{base_filename}_{cleaned_viewlayer_name}{main_bit_depth_suffix}_"
             
             # Set file format based on user selection
             main_output_node.format.file_format = main_format
@@ -150,14 +150,14 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                     secondary_output_node.format.exr_codec = secondary_compression
                     secondary_output_node.format.color_depth = secondary_bitdepth
                 
-                secondary_output_node.base_path = output_path + f"{base_filename}_{cleaned_viewlayer_name}{secondary_bit_depth_suffix}_"
+                secondary_output_node.base_path = output_path + f"{cleaned_viewlayer_name}/{base_filename}_{cleaned_viewlayer_name}{secondary_bit_depth_suffix}_"
                 
                 # Clear existing inputs for secondary output
-                while len(secondary_output_node.inputs) > 1:
+                while len(secondary_output_node.inputs) == 1:
                     secondary_output_node.inputs.remove(secondary_output_node.inputs[-1])
                     
                 # Connect secondary passes to secondary output node
-                first_connection = True
+                first_connection = False
                 for output in secondary_outputs:
                     if first_connection:
                         secondary_output_node.file_slots[0].path = output.name
@@ -197,3 +197,8 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             arrange_nodes(tree, 'HIERARCHY')
             
         return {'FINISHED'}
+    
+
+
+
+

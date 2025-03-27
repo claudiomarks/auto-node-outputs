@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 name = "Auto Node Outputs"
 author = "claudiomarks"
-version = "1.6.3"
+version = "1.6.5"
 id = "auto_node_outputs"
 tagline = "Automatically connect ViewLayers to File Output nodes"
 maintainer = "claudiomarks"
