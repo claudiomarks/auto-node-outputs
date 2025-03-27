@@ -26,12 +26,12 @@ def clean_viewlayer_name(name):
 def clean_gp_layer_name(name):
     """
     Clean the grease pencil layer name:
-    1. Remove the .gp suffix
+    1. Remove the .gp.vl suffix
     2. Replace dots with underscores
     """
-    # Remove .gp suffix if present
-    if name.endswith(".gp"):
-        name = name[:-3]
+    # Remove .gp.vl suffix if present
+    if name.endswith(".gp.vl"):
+        name = name[:-6]
     
     # Replace dots with underscores
     cleaned_name = name.replace('.', '_')
@@ -92,76 +92,78 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         regular_layers = []
         
         for viewlayer in viewlayers:
-            if viewlayer.name.endswith(".gp"):
+            if viewlayer.name.endswith(".gp.vl"):
                 gp_layers.append(viewlayer)
             else:
                 regular_layers.append(viewlayer)
         
         # Create a single output node for all grease pencil layers if any exist
-        gp_output_node = None
         if gp_layers:
-            # Determine bit depth suffix for the GP output
-            main_bit_depth_suffix = "EXR16" if main_bitdepth == '16' else "EXR32"
-            
+            # Create a single shared output node for all GP layers
             gp_output_node = tree.nodes.new('CompositorNodeOutputFile')
-            gp_output_node.name = f"{base_filename}_GP_{main_bit_depth_suffix}_"
-            gp_output_node.label = f"{base_filename}_GP_{main_bit_depth_suffix}_"
-            gp_output_node.location = (start_x + 400, start_y)
+            gp_output_node.name = "GREASE_PENCIL_OUTPUTS"
+            gp_output_node.label = "GREASE_PENCIL_OUTPUTS"
+            gp_output_node.location = (start_x + 600, start_y - 400)  # Position it below the regular nodes
             
             # Use the custom output path from settings
             output_path = settings.custom_output_path
             if not output_path.endswith(os.sep):
                 output_path += os.sep
                 
-            # Create file path for grease pencil output
-            gp_output_node.base_path = output_path + f"GP/{base_filename}_GP_{main_bit_depth_suffix}_"
+            # Create file path for grease pencil output - use the node name
+            gp_output_node.base_path = output_path + "GREASE_PENCIL_OUTPUTS/"
             
-            # Set file format based on user selection
-            gp_output_node.format.file_format = main_format
+            # Set fixed file format for GP output: 16-bit EXR with PXR24 compression
+            gp_output_node.format.file_format = 'OPEN_EXR'
+            gp_output_node.format.exr_codec = 'PXR24'
+            gp_output_node.format.color_depth = '16'
             
-            # Apply compression codec and bit depth settings for EXR formats
-            if main_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
-                gp_output_node.format.exr_codec = main_compression
-                gp_output_node.format.color_depth = main_bitdepth
-            
-            # Clear existing inputs for GP output
+            # Clear existing inputs for GP output node
             while len(gp_output_node.inputs) > 1:
                 gp_output_node.inputs.remove(gp_output_node.inputs[-1])
-        
-        # Process grease pencil layers first
-        for idx, viewlayer in enumerate(gp_layers):
-            wm.progress_update(idx)
             
-            # Get the original viewlayer name
-            original_viewlayer_name = viewlayer.name
-            
-            # Clean the viewlayer name for use as the connection name (without .gp suffix)
-            cleaned_gp_name = clean_gp_layer_name(original_viewlayer_name)
-            
-            rl_node = tree.nodes.new('CompositorNodeRLayers')
-            rl_node.name = f"ViewLayer_{original_viewlayer_name}"  # Use original for internal reference
-            rl_node.label = original_viewlayer_name  # Keep original name in UI
-            rl_node.layer = original_viewlayer_name  # Must be original to match actual viewlayer
-            rl_node.location = (start_x, start_y + (idx * spacing_y))
-            
-            # Connect all available outputs to the shared GP output node
-            for output_idx, output in enumerate(rl_node.outputs):
-                if not output.enabled:
-                    continue
+            # Create the render layer nodes for GP layers
+            gp_rl_nodes = []
+            for idx, viewlayer in enumerate(gp_layers):
+                wm.progress_update(idx)
                 
-                # Create a new connection with the cleaned GP name as the connection name
-                if output_idx == 0:
-                    gp_output_node.file_slots[0].path = cleaned_gp_name
-                    tree.links.new(output, gp_output_node.inputs[0])
-                else:
-                    gp_output_node.file_slots.new(cleaned_gp_name)
-                    tree.links.new(output, gp_output_node.inputs[-1])
+                # Get the original viewlayer name
+                original_viewlayer_name = viewlayer.name
+                
+                rl_node = tree.nodes.new('CompositorNodeRLayers')
+                rl_node.name = f"ViewLayer_{original_viewlayer_name}"
+                rl_node.label = original_viewlayer_name
+                rl_node.layer = original_viewlayer_name
+                rl_node.location = (start_x, start_y + ((len(regular_layers) + idx) * spacing_y))
+                
+                gp_rl_nodes.append((rl_node, original_viewlayer_name))
+            
+            # Now connect all GP layer outputs to the single GP output node
+            is_first_connection = True
+            for rl_node, original_name in gp_rl_nodes:
+                # Get the cleaned layer name (without .gp.vl)
+                cleaned_gp_name = clean_gp_layer_name(original_name)
+                
+                # Find the main Image output
+                image_output = None
+                for output in rl_node.outputs:
+                    if output.name == "Image" and output.enabled:
+                        image_output = output
+                        break
+                
+                if image_output:
+                    # Connect the image output to the GP output node
+                    if is_first_connection:
+                        gp_output_node.file_slots[0].path = cleaned_gp_name
+                        tree.links.new(image_output, gp_output_node.inputs[0])
+                        is_first_connection = False
+                    else:
+                        gp_output_node.file_slots.new(cleaned_gp_name)
+                        tree.links.new(image_output, gp_output_node.inputs[-1])
         
-        # Process regular layers (non-GP layers)
-        offset = len(gp_layers)
+        # Process regular layers (non-GP layers) with the standard approach
         for idx, viewlayer in enumerate(regular_layers):
-            adjusted_idx = idx + offset
-            wm.progress_update(adjusted_idx)
+            wm.progress_update(idx + len(gp_layers))
             
             # Get the original viewlayer name
             original_viewlayer_name = viewlayer.name
@@ -173,7 +175,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             rl_node.name = f"ViewLayer_{original_viewlayer_name}"  # Use original for internal reference
             rl_node.label = original_viewlayer_name  # Keep original name in UI
             rl_node.layer = original_viewlayer_name  # Must be original to match actual viewlayer
-            rl_node.location = (start_x, start_y + (adjusted_idx * spacing_y))
+            rl_node.location = (start_x, start_y + (idx * spacing_y))
             
             # Create lists to track what outputs go to which node
             main_outputs = []
@@ -241,7 +243,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                 secondary_output_node.base_path = output_path + f"{cleaned_viewlayer_name}/{base_filename}_{cleaned_viewlayer_name}{secondary_bit_depth_suffix}_"
                 
                 # Clear existing inputs for secondary output
-                while len(secondary_output_node.inputs) == 1:
+                while len(secondary_output_node.inputs) > 1:
                     secondary_output_node.inputs.remove(secondary_output_node.inputs[-1])
                     
                 # Connect secondary passes to secondary output node
