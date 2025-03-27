@@ -23,6 +23,21 @@ def clean_viewlayer_name(name):
     
     return cleaned_name
 
+def clean_gp_layer_name(name):
+    """
+    Clean the grease pencil layer name:
+    1. Remove the .gp suffix
+    2. Replace dots with underscores
+    """
+    # Remove .gp suffix if present
+    if name.endswith(".gp"):
+        name = name[:-3]
+    
+    # Replace dots with underscores
+    cleaned_name = name.replace('.', '_')
+    
+    return cleaned_name
+
 class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
     """Connect all ViewLayers in the file to File Output nodes"""
     bl_idname = "compositor.connect_viewlayers_to_output"
@@ -72,8 +87,81 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         wm = context.window_manager
         wm.progress_begin(0, len(viewlayers))
         
-        for idx, viewlayer in enumerate(viewlayers):
+        # Separate grease pencil layers and regular layers
+        gp_layers = []
+        regular_layers = []
+        
+        for viewlayer in viewlayers:
+            if viewlayer.name.endswith(".gp"):
+                gp_layers.append(viewlayer)
+            else:
+                regular_layers.append(viewlayer)
+        
+        # Create a single output node for all grease pencil layers if any exist
+        gp_output_node = None
+        if gp_layers:
+            # Determine bit depth suffix for the GP output
+            main_bit_depth_suffix = "EXR16" if main_bitdepth == '16' else "EXR32"
+            
+            gp_output_node = tree.nodes.new('CompositorNodeOutputFile')
+            gp_output_node.name = f"{base_filename}_GP_{main_bit_depth_suffix}_"
+            gp_output_node.label = f"{base_filename}_GP_{main_bit_depth_suffix}_"
+            gp_output_node.location = (start_x + 400, start_y)
+            
+            # Use the custom output path from settings
+            output_path = settings.custom_output_path
+            if not output_path.endswith(os.sep):
+                output_path += os.sep
+                
+            # Create file path for grease pencil output
+            gp_output_node.base_path = output_path + f"GP/{base_filename}_GP_{main_bit_depth_suffix}_"
+            
+            # Set file format based on user selection
+            gp_output_node.format.file_format = main_format
+            
+            # Apply compression codec and bit depth settings for EXR formats
+            if main_format in ['OPEN_EXR', 'OPEN_EXR_MULTILAYER']:
+                gp_output_node.format.exr_codec = main_compression
+                gp_output_node.format.color_depth = main_bitdepth
+            
+            # Clear existing inputs for GP output
+            while len(gp_output_node.inputs) > 1:
+                gp_output_node.inputs.remove(gp_output_node.inputs[-1])
+        
+        # Process grease pencil layers first
+        for idx, viewlayer in enumerate(gp_layers):
             wm.progress_update(idx)
+            
+            # Get the original viewlayer name
+            original_viewlayer_name = viewlayer.name
+            
+            # Clean the viewlayer name for use as the connection name (without .gp suffix)
+            cleaned_gp_name = clean_gp_layer_name(original_viewlayer_name)
+            
+            rl_node = tree.nodes.new('CompositorNodeRLayers')
+            rl_node.name = f"ViewLayer_{original_viewlayer_name}"  # Use original for internal reference
+            rl_node.label = original_viewlayer_name  # Keep original name in UI
+            rl_node.layer = original_viewlayer_name  # Must be original to match actual viewlayer
+            rl_node.location = (start_x, start_y + (idx * spacing_y))
+            
+            # Connect all available outputs to the shared GP output node
+            for output_idx, output in enumerate(rl_node.outputs):
+                if not output.enabled:
+                    continue
+                
+                # Create a new connection with the cleaned GP name as the connection name
+                if output_idx == 0:
+                    gp_output_node.file_slots[0].path = cleaned_gp_name
+                    tree.links.new(output, gp_output_node.inputs[0])
+                else:
+                    gp_output_node.file_slots.new(cleaned_gp_name)
+                    tree.links.new(output, gp_output_node.inputs[-1])
+        
+        # Process regular layers (non-GP layers)
+        offset = len(gp_layers)
+        for idx, viewlayer in enumerate(regular_layers):
+            adjusted_idx = idx + offset
+            wm.progress_update(adjusted_idx)
             
             # Get the original viewlayer name
             original_viewlayer_name = viewlayer.name
@@ -85,7 +173,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             rl_node.name = f"ViewLayer_{original_viewlayer_name}"  # Use original for internal reference
             rl_node.label = original_viewlayer_name  # Keep original name in UI
             rl_node.layer = original_viewlayer_name  # Must be original to match actual viewlayer
-            rl_node.location = (start_x, start_y + (idx * spacing_y))
+            rl_node.location = (start_x, start_y + (adjusted_idx * spacing_y))
             
             # Create lists to track what outputs go to which node
             main_outputs = []
@@ -157,7 +245,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
                     secondary_output_node.inputs.remove(secondary_output_node.inputs[-1])
                     
                 # Connect secondary passes to secondary output node
-                first_connection = False
+                first_connection = True
                 for output in secondary_outputs:
                     if first_connection:
                         secondary_output_node.file_slots[0].path = output.name
@@ -186,7 +274,7 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
         
         wm.progress_end()
         self.report({'INFO'}, f"Connected {len(viewlayers)} ViewLayers to File Output nodes")
-
+        
         # Use frame-based grouping if enabled
         if settings.auto_frame_by_prefix:
             from ..utils.node_utils import group_nodes_by_prefix_in_frames
@@ -197,8 +285,3 @@ class COMPOSITOR_OT_connect_viewlayers_to_output(Operator):
             arrange_nodes(tree, 'HIERARCHY')
             
         return {'FINISHED'}
-    
-
-
-
-
