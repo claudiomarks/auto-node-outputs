@@ -8,7 +8,7 @@ def clean_viewlayer_name(name):
     Clean the viewlayer name:
     1. Replace dots with underscores
     2. Remove the final .vl suffix if present
-    3. Add a trailing underscore
+    3. Remove all underscores
     """
     # Remove .vl suffix if present
     if name.endswith(".vl"):
@@ -17,9 +17,8 @@ def clean_viewlayer_name(name):
     # Replace dots with underscores
     cleaned_name = name.replace('.', '_')
     
-    # Add trailing underscore if not already present
-    if not cleaned_name.endswith('_'):
-        cleaned_name += '_'
+    # Remove all underscores
+    cleaned_name = cleaned_name.replace('_', '')
     
     return cleaned_name
 
