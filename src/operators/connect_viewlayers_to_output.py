@@ -8,7 +8,7 @@ def clean_viewlayer_name(name):
     Clean the viewlayer name:
     1. Replace dots with underscores
     2. Remove the final .vl suffix if present
-    3. Remove all underscores
+    3. Remove the last underscores
     """
     # Remove .vl suffix if present
     if name.endswith(".vl"):
@@ -16,10 +16,14 @@ def clean_viewlayer_name(name):
     
     # Replace dots with underscores
     cleaned_name = name.replace('.', '_')
-    
-    # Remove all underscores
-    cleaned_name = cleaned_name.rsplit('_', 1)[0]
-    
+
+    # Find the last underscore
+    last_underscore_index = cleaned_name.rfind('_')
+
+    # Remove the last underscore
+    if last_underscore_index != -1:
+        cleaned_name = cleaned_name[:last_underscore_index] + cleaned_name[last_underscore_index + 1:]
+
     return cleaned_name
 
 def clean_gp_layer_name(name):
