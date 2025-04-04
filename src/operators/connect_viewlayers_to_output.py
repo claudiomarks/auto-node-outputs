@@ -17,13 +17,6 @@ def clean_viewlayer_name(name):
     # Replace dots with underscores
     cleaned_name = name.replace('.', '_')
 
-    # Find the last underscore
-    last_underscore_index = cleaned_name.rfind('_')
-
-    # Remove the last underscore
-    if last_underscore_index != -1:
-        cleaned_name = cleaned_name[:last_underscore_index] + cleaned_name[last_underscore_index + 1:]
-
     return cleaned_name
 
 def clean_gp_layer_name(name):
